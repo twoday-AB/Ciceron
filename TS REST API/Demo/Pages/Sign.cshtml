@@ -1,0 +1,56 @@
+﻿@page
+@model Demo.Pages.SignModel
+@{
+	ViewData["Title"] = "Ciceron";
+}
+@{
+	<div class="text-center">
+        <image src="signed.png"></image>
+
+		<div><br>@Model.Message</div>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th style="width: 20%" scope="col">Attribute</th>
+                <th scope="col">Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <th scope="row">Signer</th>
+                <td>@Model.CommonName</td>
+            </tr>
+            <tr>
+                <th scope="row">Timestamp</th>
+                <td>@Model.Timestamp</td>
+            </tr>
+            <tr>
+                <th scope="row">Text to be signed</th>
+                <td>@Model.Text</td>
+            </tr>
+            <tr>
+                <th scope="row">Hidden text to be signed</th>
+                <td>@Model.Hidden</td>
+            </tr>
+            <tr>
+                <th scope="row">TransactionID</th>
+                <td>@Model.TransactionID</td>
+            </tr>
+            <tr>
+                <th scope="row">Signature</th>
+                <td>@Model.Signature</td>
+            </tr>
+            <tr>
+                <th scope="row">Issuer</th>
+                <td>@Model.Issuer</td>
+            </tr>
+            <tr>
+                <th scope="row">Digest</th>
+                <td>@Model.Digest</td>
+            </tr>
+        </tbody>
+    </table>
+	<div><a href="/Index">Restart the demo</a></div>
+}
