@@ -1,3 +1,3 @@
 # Ciceron
-Welcome to Twoday Ciceron repository
+Welcome to Ciceron repository
 
