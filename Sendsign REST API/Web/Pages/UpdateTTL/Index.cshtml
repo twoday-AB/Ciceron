@@ -1,0 +1,17 @@
+@page
+@model UpdateTTLActionPage
+
+@{
+    string messageId = HttpContext.Request.Query["MessageId"]!;
+    ViewData["Title"] = "Update TTL";
+}
+
+<script src="~/js/fieldValidator.js"></script>
+
+<form action="" method="post" class="needs-validation" novalidate>
+    <label for="ttl">New time to live</label>
+    <input class="form-control" type="number" asp-for="TimeToLive" id="ttl" required>
+    <div class="invalid-feedback">Please fill out the field</div>
+    <input type="hidden" asp-for="MessageId" value="@messageId">
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>

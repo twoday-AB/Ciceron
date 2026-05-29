@@ -1,0 +1,268 @@
+@page
+@using System.Text.Json
+@using System.Web
+@using Base
+@using Microsoft.VisualBasic
+@using Sendsign
+@using Sendsign.JsonDocuments
+@model SendsignSendPage
+@{
+    ViewData["Title"] = "New signrequest";
+
+    bool deletedAllMessageIds = false;
+    if (HttpContext.Request.Query["action"] == "ClearMessageIds")
+    {
+        HttpContext.Response.Cookies.Delete(BaseViewModel.SessionKeyMessageIds);
+        deletedAllMessageIds = true;
+    }
+
+    void GenerateTableEntry(string messageId, string messageStatus) {
+        <tr>
+            <td>@messageId</td>
+            <td>
+                @messageStatus
+            </td>
+            <td>
+                @if (@messageStatus == "waiting") 
+                {
+                    <a href="CancelRequest?MessageId=@HttpUtility.UrlEncode(messageId)">Cancel</a>
+                } 
+                else 
+                {
+                    <a disabled>Cancel</a>
+                }
+            </td>
+            <td>
+                @if (@messageStatus == "waiting") 
+                {
+                    <a type="submit" href="RemindSigner?MessageId=@HttpUtility.UrlEncode(messageId)">Remind signer</a>
+                } 
+                else 
+                {
+                    <a disabled>Remind signer</a>
+                }
+            </td>
+            <td>
+                @if (@messageStatus == "waiting") 
+                {
+                    <a href="/UpdateTTL?MessageId=@HttpUtility.UrlEncode(messageId)">Update TTL</a>
+                } 
+                else 
+                {
+                    <a disabled>Update TTL</a>
+                }
+            </td>
+        </tr>
+    }
+
+    bool ContainsMessageId(List<SendsignCookieStorage> storages, string key) {
+        foreach (var storage in storages) 
+        {
+            if (storage.MessageId == key) return true;
+        }
+
+        return false;
+    }
+}
+
+<script src="~/js/fieldValidator.js"></script>
+
+<h1>Create new sendsign sign request</h1>
+
+<p>
+    <b>Host:</b> @Model.ApiUrl
+</p>
+
+<div class="row align-items-start justify-content-end adapt-grid">
+    <section class="col">
+
+        <form method="POST" enctype="multipart/form-data" class="form-floating needs-validation" novalidate>
+            <table class="form-row">
+                    <tr>
+                        <td><label for="subject" class="required">Email subject</label></td>
+                        <td>
+                            <input class="form-control" asp-for="SendsignSendRequestInstance.Subject" type="text" id="subject" required>
+                            <div class="invalid-feedback">Email subject must not be empty</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label for="body" class="required">Email body</label>
+                        </td>
+                        <td>
+                            <textarea class="form-control" asp-for="SendsignSendRequestInstance.Body" type="text" id="body" required></textarea>
+                            <div class="invalid-feedback">Email body must not be empty</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><label for="message_type" class="required">Message type</label></td>
+                        <td>
+                            <input class="form-control" asp-for="SendsignSendRequestInstance.MessageType" type="text" oninput="checkMessageTypeOrTTL()" id="message_type" required>
+                            <div class="invalid-feedback">Message type and/or time to live must be defined</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><label for="ttl" class="required">Time to live (hours)</label></td>
+                        <td>
+                            <input class="form-control" asp-for="SendsignSendRequestInstance.TimeToLiveHours" type="number" oninput="checkMessageTypeOrTTL()" id="ttl" required>
+                            <div class="invalid-feedback">Message type and/or time to live must be defined</div>
+                        </td>
+                    </tr>
+                    @{
+                        for (int i = 0; i < Model.SendsignRecipients.Length; i++) 
+                        {
+                            <tr>
+                                <td><b>Recipient @(i + 1)</b></td>
+                            </tr>
+                            <tr>
+                                <td><label for="type-@i" class="required">Type</label></td>
+                                <td>
+                                    <select id="type-@i" asp-for="SendsignRecipients[i].Type" onchange="onTypeChange(@i)" class="form-control" required>
+                                        <option value="" disabled selected>Select an option</option>
+                                        <option value="external">External</option>
+                                        <option value="Internal">Internal</option>
+                                    </select>
+                                    <div class="invalid-feedback">Please select a recipient type</div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><label for="mail-@i">Email</label></td>
+                                <td>
+                                    <input class="form-control" type="text" asp-for="SendsignRecipients[i].Mail" id="mail-@i" pattern="^[\w\-\.]+@@([\w-]+\.)+[\w-]{2,}$">
+                                    <div class="invalid-feedback">Invalid or empty email</div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><label for="name-@i">Name</label></td>
+                                <td>
+                                    <input class="form-control" type="text" asp-for="SendsignRecipients[i].Name" id="name-@i">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><label for="ssn-@i">SSN</label></td>
+                                <td>
+                                    <input class="form-control" type="text" asp-for="SendsignRecipients[i].Ssn" id="ssn-@i">
+                                    <div class="invalid-feedback">Social security number must not be empty</div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><label for="sms-@i">Phone number</label></td>
+                                <td>
+                                    <input class="form-control" type="text" asp-for="SendsignRecipients[i].Sms" id="sms-@i" 
+                                        placeholder="Example: +46 12 456 78 90"
+                                        pattern="^([+])\d{2,3}\s\d{2,3}\s\d{3}\s\d{2}\s\d{2}$">
+                                    <div class="invalid-feedback">
+                                        Format: +46 70 000 00 00
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    <tr>
+                        <td><b>Attachments</b></td>
+                    </tr>
+                    <tr>
+                        <td><label for="files" class="required">Input files</label></td>
+                        <td>
+                            <input type="file" asp-for="Files" id="files" accept=".pdf" class="form-control" multiple required>
+                            <div class="invalid-feedback">At least one PDF file must be selected.</div>
+                        </td>
+                    </tr>
+            </table>
+            <button type="submit" class="btn btn-primary btn-block">Submit</input>
+        </form>
+    </section>
+    <section class="col">
+        <form action="" method="post" class="form-floating needs-validation" novalidate>
+            <table>
+                <tbody>
+                    <tr>
+                        <td>
+                            <label for="RecipientCount" class="required"><b>Number of recipients</b></label>
+                        </td>
+                        <td>
+                            <input type="number" class="form-control" id="RecipientCount" min=1 max=20 asp-for="RecipientCount" required>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <button class="btn btn-secondary btn-block" asp-for="RecipientCount" id="RecipientCount" type="submit">Update</button>
+        </form>
+    </section>
+    <section class="subsection">
+        <h2>Sendsign request status</h2>
+
+        <table id="request-status" class="overflow-scroll">
+            @{
+                List<string> keys = SendsignSendPage.CookieToArray<string>(HttpContext, BaseViewModel.SessionKeyMessageIds);
+
+                string? sender = HttpContext.Request.Cookies[BaseViewModel.SessionKeySender];
+                string? customerKey = HttpContext.Request.Cookies[BaseViewModel.SessionKeyCustomerKey];
+
+                if (Model.LastMessageID != null) 
+                {
+                    keys.Add(Model.LastMessageID);
+                    Model.LastMessageID = null;
+                }
+
+                <tr>
+                    <th>Message ID</th>
+                    <th>Message status</th>
+                    <th>Cancel sign request</th>
+                    <th>Remind users</th>
+                    <th>Update time to live</th>
+                </tr>
+
+                if (sender == null || customerKey == null || deletedAllMessageIds) {
+                    return;
+                }
+
+                List<SendsignRequest> requests = [];
+
+                List<SendsignCookieStorage> statusMessages = 
+                    SendsignSendPage.CookieToArray<SendsignCookieStorage>(HttpContext, BaseViewModel.SessionMessageIdIgnore);
+                    
+                foreach (string i in keys) 
+                {
+                    // Check if contains MessageId and continue if it does. 
+                    if (ContainsMessageId(statusMessages, i)) 
+                        continue;
+
+                    requests.Add(new SendsignRequest() {
+                        CustomerKey = customerKey,
+                        Sender = sender,
+                        MessageId = i
+                    });
+                }
+
+                List<SendsignFetchResponse> resp = requests.Count > 0 ? 
+                    Model.apiCaller.Fetch(requests) : [];
+
+                foreach (SendsignFetchResponse message in resp) 
+                {
+                    if (message.MessageStatus != "waiting" && 
+                        !ContainsMessageId(statusMessages, message.MessageId!)) 
+                    {
+                        statusMessages.Add(new SendsignCookieStorage() {
+                            MessageId = message.MessageId!,
+                            Status = message.MessageStatus!
+                        });
+                    }
+
+                    GenerateTableEntry(message.MessageId!, message.MessageStatus!);
+                }
+
+                foreach (SendsignCookieStorage storage in statusMessages) 
+                {
+                    GenerateTableEntry(storage.MessageId!, storage.Status!);
+                }
+
+                Console.WriteLine(JsonSerializer.Serialize(statusMessages));
+                SendsignSendPage.StoreCookie(HttpContext, statusMessages, BaseViewModel.SessionMessageIdIgnore);
+            }
+        </table>
+    </section>
+    <section>
+        <a class="btn btn-primary" asp-action="ClearMessageIds">Clear entries locally</a>
+    </section>
+</div>
