@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo CS REST API</title>
+    <link rel="shortcut icon" href="twoday-favicon.svg">
+    <style>
+        :root
+        {
+            color-scheme: light dark;
+        }
+        form
+        {
+            display: grid;
+            grid-template-columns: max-content 30ch minmax(30ch,50ch);
+            gap: 4px;
+            align-items: baseline;
+        }
+        label
+        {
+            grid-column: 1;
+        }
+        input[type=submit]
+        {
+            grid-column: 2;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Demo CS REST API</h1>
+        <form method="post" action="auth">
+            <label for="apiHost">Api host </label>
+            <input id="apiHost" name="apiHost" placeholder="https://api.example.com/" required />
+
+            <label for="certificateIssuer">Client certificate </label>
+            <input id="certificateIssuer" name="certificateIssuer" placeholder="" />
+            <small>(optional)</small>
+
+            <label for="provider">Provider </label>
+            <select id="provider" name="provider">
+                <option value="freja">Freja</option>
+                <option value="bankid">BankID</option>
+            </select>
+
+            <label for="system">System name </label>
+            <input id="system" name="system" placeholder="system_name" required/>
+
+            <label for="personalNumber">Personal identity number </label>
+            <input id="personalNumber" name="personalNumber" placeholder="YYYYMMDDNNNN" />
+            <small>(optional, but support for not using personalNumber and instead showing qr code is not implemented in this demo)</small>
+
+            <input type="submit" value="Submit"/>
+        </form>
+    </main>
+</body>
+</html>
